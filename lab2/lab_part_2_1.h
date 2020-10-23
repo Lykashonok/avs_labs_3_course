@@ -33,7 +33,6 @@ protected:
                 last = last->next_node;
             last->next_node = new_node;
         }
-        // std::cout << "pushed " << std::this_thread::get_id() << "\n";
     }
 
     virtual T pop_unsafe() {
@@ -41,7 +40,7 @@ protected:
             return 0;
         } else {
             T value = head->value;
-            // std::cout << "poped " << std::this_thread::get_id() << "\n";
+
             head = head->next_node;
             return value;
         }
@@ -58,26 +57,29 @@ class SafeThreadQueue : Queue<T> {
     std::mutex _m;
 public:
     void push(T value) {
-        std::lock_guard<std::mutex> g(_m);
+        _m.lock();
         this->push_unsafe(value);
+        _m.unlock();
     }
     bool pop(T& value) {
-        std::lock_guard<std::mutex> g(_m);
-        
+        _m.lock();
         if (this->head!=nullptr) 
         {
             value = this->pop_unsafe();
+            _m.unlock();
             return true;
         } else {
             _m.unlock();
-            std::this_thread::sleep_for(std::chrono::microseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
             _m.lock();
 
             if (this->head!=nullptr) 
             {
                 value = this->pop_unsafe();
+                _m.unlock();
                 return true;
             } else {
+                _m.unlock();
                 return false;
             }
         }

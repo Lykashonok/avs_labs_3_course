@@ -73,12 +73,8 @@ public:
         std::unique_lock<std::mutex> _g(_m);
         
         if (this->isFull()) {
-            
-            while (this->isFull()){
-                _m.unlock();
-                // _cv.wait(_g, [this] () {return !this->isFull();});
-                _m.lock();
-            }
+
+            _cv.wait(_g, [this] () {return !this->isFull();});
 
             this->push_unsafe(value);
         } else {
@@ -91,21 +87,30 @@ public:
         
         if (this->isEmpty()) 
         {
-            _m.unlock();
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            _m.lock();
+            _g.unlock();
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            _g.lock();
 
             if (this->isEmpty()) 
             {
+                _g.unlock();
+                _cv.notify_one();
+                _g.lock();
                 return false;
             } else {
+                
                 value = this->pop_unsafe();
-                // _cv.notify_one();
+                _g.unlock();
+                _cv.notify_one();
+                _g.lock();
                 return true;
             }
         } else {
             value = this->pop_unsafe();
-            // _cv.notify_one();
+
+            _g.unlock();
+            _cv.notify_one();
+            _g.lock();
             return true;   
         }
     }

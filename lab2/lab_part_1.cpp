@@ -15,13 +15,15 @@ std::mutex _m;
 
 // MUTEX
 void incrementMutex(uint64_t &index, uint64_t NumsPerThread, uint64_t numTasks, bool sleep = false) {
-    
+    int currentIndex;
     for (uint64_t i = 0; i < NumsPerThread; i++)
     {
         if (index >= numTasks) break;
         _m.lock();
-        numArray[index++]++;
+        currentIndex = index++;
         _m.unlock();
+        numArray.at(currentIndex)++;
+        
         if (sleep) std::this_thread::sleep_for(std::chrono::nanoseconds(10));
     }
 }
@@ -42,8 +44,10 @@ static std::atomic<int> indexAtomic{ 0 };
 void incrementAtomic(uint64_t NumsPerThread, uint64_t numTasks, bool sleep = false) {
     for (uint64_t i = 0; i < NumsPerThread; i++)
     {
-        if (indexAtomic >= numTasks) break;
-        numArray[indexAtomic.fetch_add(1)]++;
+        int currentIndex = indexAtomic.fetch_add(1);
+
+        if (currentIndex >= numTasks) break;
+        numArray.at(currentIndex)++;
         if (sleep) std::this_thread::sleep_for(std::chrono::nanoseconds(10));
     }
 }
@@ -51,7 +55,6 @@ void threadTaskAtomic(uint64_t NumsPerThread, uint64_t NumThreads, uint64_t numT
     std::vector<std::thread> threadArray(NumThreads);
     for (uint64_t j = 0; j < NumThreads; j++)
     {
-        if (indexAtomic >= numTasks) break;
         threadArray[j] = std::thread(incrementAtomic, NumsPerThread, numTasks, sleep);
     }
     for (auto &t : threadArray) if (t.joinable()) t.join();
@@ -64,7 +67,7 @@ void nonThreadTask(int numTasks, bool sleep) {
     int index = 0;
     while (index < numTasks)
     {
-        numArray[index++]++;
+        numArray.at(index++)++;
         if (sleep) std::this_thread::sleep_for(std::chrono::nanoseconds(10));
     }
 }
@@ -73,13 +76,15 @@ void nonThreadTask(int numTasks, bool sleep) {
 int main()
 {
     std::cout << "Your cpu has " << std::thread::hardware_concurrency() << " physical cores" << std::endl;
-    uint64_t numTasks = 1024*1024;
+    uint64_t numTasks = 1024*100;
     // instantiating
-    for (int i = 0; i < numTasks; i++) numArray.push_back(0);
+    numArray = std::vector<uint64_t>(numTasks, 0);
+    std::cout << "numArray size is " << numArray.size() << '\n';
     std::cout << "numTasks is " << numTasks << '\n';
     
     // testing with different number of threads
-    testConfiguration(numTasks, 4, true);
+    testConfiguration(numTasks, 2, false);
+    testConfiguration(numTasks, 4, false);
     testConfiguration(numTasks, 8, false);
     testConfiguration(numTasks, 16, false);
     testConfiguration(numTasks, 32, false);
