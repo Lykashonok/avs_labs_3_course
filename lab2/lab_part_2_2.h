@@ -6,7 +6,7 @@
 #include "lab_part_2_1.h"
 
 template<class T>
-class QueueSize : public IQueue<T>{
+class QueueSize {
 protected:
     class Node {
     public:
@@ -63,7 +63,7 @@ public:
 };
 
 template<class T>
-class SafeThreadSizeQueueMutex : QueueSize<T> {
+class SafeThreadSizeQueueMutex : QueueSize<T>, public IQueue<T> {
     std::mutex _m;
     std::condition_variable _cv;
 public:

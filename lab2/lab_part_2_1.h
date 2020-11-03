@@ -5,12 +5,16 @@
 template <class T>
 class IQueue {
 public:
-    virtual void push_unsafe(T value) = 0;
-    virtual T pop_unsafe() = 0;
+    virtual void push(T value) = 0;
+    virtual bool pop(T& value) = 0;
 };
-
+    // void push(T value) {
+    // bool pop(T& value) {
+    
+    // void push(T value) {
+    // bool pop(T& value) {
 template<class T>
-class Queue : public IQueue<T>{
+class Queue {
 protected:
     class Node {
     public:
@@ -53,20 +57,18 @@ public:
 };
 
 template<class T>
-class SafeThreadQueue : Queue<T> {
+class SafeThreadQueue : Queue<T>, public IQueue<T> {
     std::mutex _m;
 public:
     void push(T value) {
-        _m.lock();
+        std::lock_guard<std::mutex> _g(_m);
         this->push_unsafe(value);
-        _m.unlock();
     }
     bool pop(T& value) {
-        _m.lock();
+        std::lock_guard<std::mutex> _g(_m);
         if (this->head!=nullptr) 
         {
             value = this->pop_unsafe();
-            _m.unlock();
             return true;
         } else {
             _m.unlock();
@@ -76,10 +78,9 @@ public:
             if (this->head!=nullptr) 
             {
                 value = this->pop_unsafe();
-                _m.unlock();
                 return true;
             } else {
-                _m.unlock();
+        
                 return false;
             }
         }

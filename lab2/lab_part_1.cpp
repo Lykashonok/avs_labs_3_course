@@ -42,7 +42,7 @@ void threadTaskMutex(uint64_t NumsPerThread, uint64_t NumThreads, uint64_t numTa
 // ATOMIC
 static std::atomic<int> indexAtomic{ 0 };
 void incrementAtomic(uint64_t NumsPerThread, uint64_t numTasks, bool sleep = false) {
-    for (uint64_t i = 0; i < NumsPerThread; i++)
+    while (true)
     {
         int currentIndex = indexAtomic.fetch_add(1);
 
@@ -50,6 +50,7 @@ void incrementAtomic(uint64_t NumsPerThread, uint64_t numTasks, bool sleep = fal
         numArray.at(currentIndex)++;
         if (sleep) std::this_thread::sleep_for(std::chrono::nanoseconds(10));
     }
+    
 }
 void threadTaskAtomic(uint64_t NumsPerThread, uint64_t NumThreads, uint64_t numTasks, bool sleep = false) {
     std::vector<std::thread> threadArray(NumThreads);
@@ -83,10 +84,10 @@ int main()
     std::cout << "numTasks is " << numTasks << '\n';
     
     // testing with different number of threads
-    testConfiguration(numTasks, 2, false);
-    testConfiguration(numTasks, 4, false);
-    testConfiguration(numTasks, 8, false);
-    testConfiguration(numTasks, 16, false);
+    // testConfiguration(numTasks, 2, false);
+    // testConfiguration(numTasks, 4, false);
+    // testConfiguration(numTasks, 8, false);
+    // testConfiguration(numTasks, 16, false);
     testConfiguration(numTasks, 32, false);
 
     // checking if numarray has the same number
